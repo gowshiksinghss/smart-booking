@@ -74,13 +74,9 @@ const StudentOverview = () => {
                 const activeBooking = (bookingInitiatives || []).find(b => b.roomId === room.id);
                 const eligibility = activeBooking && getStudentEligibility ? getStudentEligibility(activeBooking, user) : { status: 'none' };
                 const displayTitle = activeBooking ? activeBooking.title : room.name;
-                {/*const displayHours = activeBooking ? activeBooking.timeSlot : room.hours;
+                const displayHours = activeBooking ? activeBooking.timeSlot : room.hours;
                 const displayCoordinator = activeBooking ? activeBooking.facultyName : room.coordinator;
-                const coordinatorInitials = room.coordinatorInitials || (displayCoordinator.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase());*/}
-
-                const displayHours = activeBooking ? activeBooking.timeSlot : (room.hours || "09:00 - 17:00");
-                const displayCoordinator = activeBooking ? activeBooking.facultyName : (room.coordinator || "Faculty Member");
-                const coordinatorInitials = room.coordinatorInitials || (displayCoordinator ? displayCoordinator.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'FM');
+                const coordinatorInitials = room.coordinatorInitials || (displayCoordinator.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase());
 
                 return (
                   <div 
@@ -175,34 +171,19 @@ const StudentOverview = () => {
           </h3>
           
           <div className="bg-white border border-slate-200/80 p-5 rounded-2xl space-y-4 shadow-sm">
-            {/* {bookings.map((booking) => (
+            {bookings.map((booking) => (
               <div key={booking.id} className="flex items-start space-x-3.5 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0">
                 <div className="bg-[#deebff] text-[#0747a6] w-10 h-10 rounded-lg flex flex-col justify-center items-center shrink-0 border border-blue-100">
                   <span className="text-[7px] font-black uppercase">{booking.date.split(' ')[0]}</span>
-                  <span className="text-xs font-bold mt-0.5">{booking.date.split(' ')[1]}</span> */}
-             {bookings.map((booking) => {
-              const dateParts = (booking.date || '').split(' ');
-              return (
-                <div key={booking.id} className="flex items-start space-x-3.5 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0">
-                  <div className="bg-[#deebff] text-[#0747a6] w-10 h-10 rounded-lg flex flex-col justify-center items-center shrink-0 border border-blue-100">
-                    <span className="text-[7px] font-black uppercase">{dateParts[0] || 'AUG'}</span>
-                    <span className="text-xs font-bold mt-0.5">{dateParts[1] || '01'}</span>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">{booking.title}</h4>
-                    <p className="text-[10px] text-slate-500 mt-0.5">📍 {booking.room}</p>
-                    <p className="text-[9px] text-slate-400 mt-0.5">🕒 {booking.time}</p>
-                  </div>
+                  <span className="text-xs font-bold mt-0.5">{booking.date.split(' ')[1]}</span>
                 </div>
-                {/*  <div>
+                <div>
                   <h4 className="text-xs font-bold text-slate-800">{booking.title}</h4>
                   <p className="text-[10px] text-slate-500 mt-0.5">📍 {booking.room}</p>
                   <p className="text-[9px] text-slate-400 mt-0.5">🕒 {booking.time}</p>
                 </div>
               </div>
-            ))} */}
-             );
-                })}
+            ))}
           </div>
         </div>
 
