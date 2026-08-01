@@ -37,7 +37,10 @@ const MyBookings = () => {
 
       {activeTab === 'upcoming' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {bookings.map((booking) => (
+          {/*     {bookings.map((booking) => ( */}
+          {bookings.map((booking) => {
+            const dateParts = (booking.date || '').split(' ');
+            return (
             <div 
               key={booking.id} 
               className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4"
@@ -45,8 +48,10 @@ const MyBookings = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="bg-[#deebff] text-[#0747a6] w-12 h-12 rounded-xl flex flex-col justify-center items-center shrink-0 border border-blue-150">
-                    <span className="text-[8px] font-black uppercase leading-none">{booking.date.split(' ')[0]}</span>
-                    <span className="text-sm font-black mt-0.5 leading-none">{booking.date.split(' ')[1]}</span>
+                    {/* <span className="text-[8px] font-black uppercase leading-none">{booking.date.split(' ')[0]}</span>
+                    <span className="text-sm font-black mt-0.5 leading-none">{booking.date.split(' ')[1]}</span>*/}
+                    <span className="text-[8px] font-black uppercase leading-none">{dateParts[0] || 'AUG'}</span>
+                      <span className="text-sm font-black mt-0.5 leading-none">{dateParts[1] || '01'}</span>
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900">{booking.title}</h4>
@@ -78,8 +83,10 @@ const MyBookings = () => {
                   Verify Details
                 </button>
               </div>
-            </div>
-          ))}
+              {/*</div>
+          ))} */}
+            );
+          })}
         </div>
       ) : (
         <div className="bg-white border border-slate-200 p-8 rounded-2xl text-center text-slate-400 text-xs font-semibold">
