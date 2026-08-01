@@ -43,7 +43,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
-      callback(new Error(CORS policy blocked access for origin: ${origin}));
+      callback(new Error(`CORS policy blocked access for origin: ${origin}`));
     }
   },
   credentials: true
