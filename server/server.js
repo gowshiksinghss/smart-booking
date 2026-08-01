@@ -59,11 +59,19 @@ app.get('/status', (req, res) => {
   });
 });
 
+// Edited for testing
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    status: 'Active', 
+    message: 'BIT Sathy Smart Classroom API Backend is Running!' 
+  });
+});
+
 // Error handling middleware
 app.use(errorHandler);
 
 const startServer = (port) => {
-  const server = app.listen(port, "0.0.0.0", () => {
+  const server = app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
   });
   server.on('error', (err) => {
