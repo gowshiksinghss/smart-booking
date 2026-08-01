@@ -13,8 +13,7 @@ const AttendanceCheckIn = () => {
     if (filterType === 'All') return true;
 
     // Extract the date part (e.g. "Aug 1, 2026") from "Aug 1, 2026 • 10:00 AM"
-    {/*const recordDateStr = item.date.split(' • ')[0];*/}
-    const recordDateStr = (item.date || '').split(' • ')[0];
+    const recordDateStr = item.date.split(' • ')[0];
     const recordDate = new Date(recordDateStr);
 
     if (filterType === 'Today') {
