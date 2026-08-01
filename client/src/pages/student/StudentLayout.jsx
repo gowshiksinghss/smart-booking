@@ -71,6 +71,8 @@ const StudentLayout = () => {
           capacity: r.capacity || 60,
           type: r.roomType === 'lab' ? 'RESEARCH LAB' : r.roomType === 'seminar_hall' ? 'SEMINAR HALL' : 'CLASSROOM',
           image: r.image || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80",
+          hours: r.hours || '09:00 - 17:00',
+          coordinator: r.coordinator || 'Faculty Member',
           status: r.status === 'Maintenance' ? 'Maintenance' : (hasActiveBooking ? 'Booked' : 'Available'),
           bookings: roomBookings
         };
@@ -415,6 +417,7 @@ const StudentLayout = () => {
           selectedRoomForBooking, setSelectedRoomForBooking,
           showOtpModal, setShowOtpModal,
           bookingDetailModal, setBookingDetailModal,
+          getStudentEligibility,
           triggerToast
         }} />
       </main>
@@ -438,7 +441,8 @@ const StudentLayout = () => {
         const displayHours = details.timeSlot || details.hours || "10:00 - 12:00";
         const displayPurpose = details.reason || details.purpose || "Self-study and lab validation session.";
         const displayCoordinator = details.facultyName || details.coordinator || "Dr. Sarah Chen";
-        const coordinatorInitials = details.coordinatorInitials || (displayCoordinator.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase());
+      {/*const coordinatorInitials = details.coordinatorInitials || (displayCoordinator.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()); */}
+        const coordinatorInitials = details.coordinatorInitials || (displayCoordinator ? displayCoordinator.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'SC');
 
         return (
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
