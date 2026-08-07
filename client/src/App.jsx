@@ -30,6 +30,7 @@ import StaffOtpSession from './pages/staff/StaffOtpSession';
 import AdminLayout from './pages/admin/AdminLayout';
 import UserGovernance from './pages/admin/UserGovernance';
 import AdminRoomsLayout from './pages/admin/AdminRoomsLayout';
+import AdminBroadcasts from './pages/admin/AdminBroadcasts';
 import AnalyticsExport from './pages/admin/AnalyticsExport';
 import SystemSettings from './pages/admin/SystemSettings';
 
@@ -102,6 +103,7 @@ function App() {
             <Route index element={<Navigate to="users" replace />} />
             <Route path="users" element={<UserGovernance />} />
             <Route path="rooms" element={<AdminRoomsLayout />} />
+            <Route path="broadcast" element={<AdminBroadcasts />} />
             <Route path="export" element={<AnalyticsExport />} />
             <Route path="settings" element={<SystemSettings />} />
           </Route>

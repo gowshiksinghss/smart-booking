@@ -20,6 +20,25 @@ const AdminLayout = () => {
   // State Management
   const [usersList, setUsersList] = useState([]);
   const [roomsList, setRoomsList] = useState([]);
+  const [notificationList, setNotificationList] = useState([]);
+  const [surveys, setSurveys] = useState([
+    {
+      id: 'survey-1',
+      title: 'Resource Feedback Survey',
+      questions: [
+        { id: 'q-1', text: 'Rate the AV presentation quality in Lab 402:', type: 'rating' },
+        { id: 'q-2', text: 'Was the air conditioning functional?', type: 'choice', options: ['Yes, perfect', 'Too cold', 'Not cooling', 'Broken'] }
+      ]
+    },
+    {
+      id: 'survey-2',
+      title: 'Session Material Feedback',
+      questions: [
+        { id: 'q-1', text: 'Rate the complexity of today\'s lab exercises:', type: 'rating' },
+        { id: 'q-2', text: 'Did you complete the tasks?', type: 'choice', options: ['Yes, fully', 'Partially', 'No'] }
+      ]
+    }
+  ]);
 
   // Settings
   const [allowExternalDomains, setAllowExternalDomains] = useState(false);
@@ -96,6 +115,9 @@ const AdminLayout = () => {
         }))
       }));
       setRoomsList(mappedRooms);
+
+      const notifs = await api.getNotifications();
+      setNotificationList(notifs);
     } catch (err) {
       console.error("Error refreshing admin governance data:", err);
     }
@@ -199,7 +221,7 @@ const AdminLayout = () => {
                 Admin Profile
               </span>
             </h2>
-            <p className="text-xs text-slate-555 text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Global system monitoring, user permission overrides, room specification updates, and security ledger downloads.
             </p>
           </div>
@@ -231,7 +253,10 @@ const AdminLayout = () => {
           showAddUserModal, setShowAddUserModal,
           showAddRoomModal, setShowAddRoomModal,
           handleTogglePermission,
-          triggerToast
+          triggerToast,
+          refreshData,
+          notificationList, setNotificationList,
+          surveys, setSurveys
         }} />
       </main>
 

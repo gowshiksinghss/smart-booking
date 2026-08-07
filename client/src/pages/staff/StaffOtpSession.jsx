@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Radio, BookOpen, AlertTriangle, Clock, Users, Shield, Check } from 'lucide-react';
+import { Radio, BookOpen, AlertTriangle, Clock, Users, Shield, Check, Calendar } from 'lucide-react';
 
 const getDeptAbbr = (dept = '') => {
   if (dept.toLowerCase().includes('computer')) return 'CSE';
@@ -43,10 +43,31 @@ const StaffOtpSession = () => {
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [localRoster, setLocalRoster] = useState([]);
 
+  // Date filtering state
+  const [filterType, setFilterType] = useState('today');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
   // Filter approved direct staff bookings and faculty bookings
   const staffSessions = (bookingQueue || []).filter(
     b => b.status === 'APPROVED' || b.status === 'Approved'
   );
+
+  // Date filtering logic
+  const filteredSessions = staffSessions.filter(session => {
+    if (filterType === 'all') return true;
+    if (!session.startTime) return false;
+    
+    const sessionDateStr = new Date(session.startTime).toISOString().split('T')[0];
+    
+    if (filterType === 'today') {
+      const todayStr = new Date().toISOString().split('T')[0];
+      return sessionDateStr === todayStr;
+    }
+    if (filterType === 'date') {
+      return sessionDateStr === selectedDate;
+    }
+    return true;
+  });
 
   const selectedSession = staffSessions.find(s => s.id === selectedSessionId);
 
@@ -172,10 +193,59 @@ const StaffOtpSession = () => {
 
       {/* ── Step 1: Session Selector ── */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
-        <div className="flex items-center space-x-2 mb-1">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Step 1</span>
-          <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Select Staff Session</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex items-center space-x-2">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Step 1</span>
+            <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Select Staff Session</span>
+          </div>
+
+          <div className="flex items-center flex-wrap gap-2">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setFilterType('today')}
+                className={`text-[10px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer ${
+                  filterType === 'today'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType('date')}
+                className={`text-[10px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer ${
+                  filterType === 'date'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Choose Date
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType('all')}
+                className={`text-[10px] font-bold px-3 py-1 rounded-md transition-all cursor-pointer ${
+                  filterType === 'all'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                All
+              </button>
+            </div>
+
+            {filterType === 'date' && (
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="text-[10px] font-bold text-slate-850 bg-white border border-slate-200 rounded-lg px-2.5 py-1 outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            )}
+          </div>
         </div>
 
         {staffSessions.length === 0 ? (
@@ -183,9 +253,14 @@ const StaffOtpSession = () => {
             <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>No active or approved staff bookings found.</p>
           </div>
+        ) : filteredSessions.length === 0 ? (
+          <div className="text-center py-8 text-slate-400 text-xs">
+            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50 text-emerald-550 animate-pulse" />
+            <p>No active sessions found for this filter/date.</p>
+          </div>
         ) : (
           <div className="space-y-2">
-            {staffSessions.map(session => {
+            {filteredSessions.map(session => {
               const isSelected = selectedSessionId === session.id;
               return (
                 <button

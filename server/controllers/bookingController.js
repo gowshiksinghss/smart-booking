@@ -3,7 +3,7 @@ const Room = require('../models/Room');
 
 // Create new room booking, detecting overlaps and bypassing approvals for staff/admin
 const createBooking = async (req, res) => {
-  const { eventName, allocatedRoom, startTime, endTime, targetAudience, allowJoinRequests } = req.body;
+  const { eventName, allocatedRoom, startTime, endTime, targetAudience, allowJoinRequests, createdBy } = req.body;
 
   try {
     const start = new Date(startTime);
@@ -32,16 +32,30 @@ const createBooking = async (req, res) => {
     const bypassQueue = req.user.role === 'staff' || req.user.role === 'admin';
     const status = bypassQueue ? 'APPROVED' : 'PENDING_STAFF_APPROVAL';
 
+    // Delegation support
+    let dept = req.user.department;
+    let creatorId = req.user._id;
+    let initRole = req.user.role;
+    if ((req.user.role === 'admin' || req.user.role === 'staff') && createdBy) {
+      const User = require('../models/User');
+      const assignedUser = await User.findById(createdBy);
+      if (assignedUser) {
+        dept = assignedUser.department;
+        creatorId = assignedUser._id;
+        initRole = assignedUser.role;
+      }
+    }
+
     const booking = await BookingInitiative.create({
       eventName,
       allocatedRoom,
       startTime: start,
       endTime: end,
-      createdBy: req.user._id,
-      initiatedByRole: req.user.role,
-      department: req.user.department,
-      targetAudience,
-      allowJoinRequests,
+      createdBy: creatorId,
+      initiatedByRole: initRole,
+      department: dept,
+      targetAudience: targetAudience || { type: 'department', groupName: dept },
+      allowJoinRequests: !!allowJoinRequests,
       status,
       approvedBy: bypassQueue ? req.user._id : null
     });

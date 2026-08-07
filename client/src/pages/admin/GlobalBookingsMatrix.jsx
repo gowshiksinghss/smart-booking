@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { 
   Calendar, ChevronLeft, ChevronRight, Info, AlertTriangle, 
   Check, X, ShieldAlert, Edit, ArrowRight, Users 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../utils/api';
 
-const GlobalBookingsMatrix = ({ roomsList, setRoomsList, triggerToast }) => {
+const GlobalBookingsMatrix = ({ roomsList, setRoomsList, triggerToast, refreshData }) => {
   const { user } = useAuth();
+  const { usersList } = useOutletContext();
   const [viewMode, setViewMode] = useState('all'); // 'all' (All Rooms) | 'single' (Single Room 7-Day)
   const [selectedDate, setSelectedDate] = useState(new Date('2026-07-27')); // Mock anchor date
   
@@ -28,6 +31,16 @@ const GlobalBookingsMatrix = ({ roomsList, setRoomsList, triggerToast }) => {
   const [reallocateDate, setReallocateDate] = useState('');
   const [reallocateStartTime, setReallocateStartTime] = useState('');
   const [reallocateEndTime, setReallocateEndTime] = useState('');
+
+  // Allocation/Assignment Modal states
+  const [showAllocationModal, setShowAllocationModal] = useState(false);
+  const [allocationRoom, setAllocationRoom] = useState(null);
+  const [allocationDate, setAllocationDate] = useState(null);
+  const [allocationStartTime, setAllocationStartTime] = useState('');
+  const [allocationEndTime, setAllocationEndTime] = useState('');
+  const [allocationTitle, setAllocationTitle] = useState('');
+  const [allocationUser, setAllocationUser] = useState('');
+  const [allocationPurpose, setAllocationPurpose] = useState('');
 
   const timelineScrollRef = useRef(null);
 
@@ -378,6 +391,68 @@ const GlobalBookingsMatrix = ({ roomsList, setRoomsList, triggerToast }) => {
     triggerToast("Join request declined.");
   };
 
+  const handleTrackClick = (e, row) => {
+    // Prevent trigger if they click an existing booking block (since that opens details modal)
+    if (e.target.closest('.absolute.h-\\[52px\\]')) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const timelineClickX = clickX - 160;
+    if (timelineClickX < 0) return; // clicked the left label
+
+    const clickedMinutes = Math.floor((timelineClickX / 1440) * 1440);
+    const roundedMinutes = Math.round(clickedMinutes / 15) * 15;
+
+    const startMins = roundedMinutes;
+    const endMins = Math.min(startMins + 60, 1440);
+
+    const activeRoom = viewMode === 'all' ? row.roomObj : selectedRoomObj;
+    const activeDate = viewMode === 'all' ? selectedDate : row.date;
+
+    setAllocationRoom(activeRoom);
+    setAllocationDate(activeDate);
+    setAllocationStartTime(minutesToHourMinuteString(startMins));
+    setAllocationEndTime(minutesToHourMinuteString(endMins));
+    setAllocationTitle('');
+    setAllocationUser('');
+    setAllocationPurpose('');
+    setShowAllocationModal(true);
+  };
+
+  const handleAllocateSubmit = async (e) => {
+    e.preventDefault();
+    if (!allocationTitle || !allocationUser || !allocationRoom) {
+      triggerToast("Please fill in all required fields.");
+      return;
+    }
+
+    const [startHour, startMin] = allocationStartTime.split(':').map(Number);
+    const [endHour, endMin] = allocationEndTime.split(':').map(Number);
+
+    const startISO = `${formatISODate(allocationDate)}T${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}:00`;
+    const endISO = `${formatISODate(allocationDate)}T${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}:00`;
+
+    try {
+      await api.createBooking({
+        eventName: allocationTitle,
+        allocatedRoom: allocationRoom.id || allocationRoom._id,
+        startTime: startISO,
+        endTime: endISO,
+        createdBy: allocationUser, // chosen faculty ID
+        allowJoinRequests: true,
+        reason: allocationPurpose
+      });
+
+      triggerToast("Session assigned and booked successfully!");
+      setShowAllocationModal(false);
+      if (refreshData) {
+        await refreshData();
+      }
+    } catch (err) {
+      triggerToast(`Failed to allocate session: ${err.message}`);
+    }
+  };
+
   // Matrix filter rows calculations
   let rows = [];
   let selectedRoomObj = roomsList.find(r => r.id === selectedRoomId);
@@ -581,7 +656,9 @@ const GlobalBookingsMatrix = ({ roomsList, setRoomsList, triggerToast }) => {
               rows.map((row) => (
                 <div 
                   key={row.id} 
-                  className="h-20 w-[1600px] relative flex bg-emerald-50/15 hover:bg-slate-50/40 transition-colors divide-x divide-slate-150/30 select-none"
+                  onClick={(e) => handleTrackClick(e, row)}
+                  title="Click empty timeline space to assign/schedule a session"
+                  className="h-20 w-[1600px] relative flex bg-emerald-50/15 hover:bg-slate-50/40 transition-colors divide-x divide-slate-150/30 select-none cursor-crosshair"
                 >
                   {/* Row Left Label */}
                   <div className="w-[160px] shrink-0 bg-white border-r border-slate-200 h-full flex flex-col justify-center px-4 font-bold select-none z-10">
@@ -1048,6 +1125,135 @@ const GlobalBookingsMatrix = ({ roomsList, setRoomsList, triggerToast }) => {
           </div>
         );
       })()}
+
+      {/* Admin Allocation/Assignment Modal */}
+      {showAllocationModal && allocationRoom && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn text-left text-slate-800 p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl animate-scaleUp flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start px-6 pt-5 pb-4 border-b border-slate-100">
+              <div>
+                <span className="text-[8.5px] font-black px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-800 uppercase tracking-wider">
+                  Administrative Assignment
+                </span>
+                <h4 className="text-xs font-black text-slate-900 mt-2 leading-snug">
+                  Assign Session at {allocationRoom.id}
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAllocationModal(false)}
+                className="text-slate-400 hover:text-slate-655 p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleAllocateSubmit} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <div>
+                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Venue</label>
+                <input
+                  type="text"
+                  disabled
+                  value={`${allocationRoom.id} - ${allocationRoom.name}`}
+                  className="w-full bg-slate-100 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Date</label>
+                <input
+                  type="text"
+                  disabled
+                  value={formatDisplayDate(allocationDate)}
+                  className="w-full bg-slate-100 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={allocationStartTime}
+                    onChange={(e) => setAllocationStartTime(e.target.value)}
+                    className="w-full bg-slate-55 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">End Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={allocationEndTime}
+                    onChange={(e) => setAllocationEndTime(e.target.value)}
+                    className="w-full bg-slate-55 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Faculty Assignee *</label>
+                <select
+                  required
+                  value={allocationUser}
+                  onChange={(e) => setAllocationUser(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
+                >
+                  <option value="">-- Select Faculty --</option>
+                  {(usersList || []).filter(u => u.role === 'faculty').map(f => (
+                    <option key={f.id || f._id} value={f.id || f._id}>
+                      {f.name} ({f.department})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Session Title / Topic *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Guest Lecture: Advanced IoT Architectures"
+                  value={allocationTitle}
+                  onChange={(e) => setAllocationTitle(e.target.value)}
+                  className="w-full bg-slate-55 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Session Purpose / Reason</label>
+                <textarea
+                  rows={2}
+                  placeholder="Type any details or scheduling justification..."
+                  value={allocationPurpose}
+                  onChange={(e) => setAllocationPurpose(e.target.value)}
+                  className="w-full bg-slate-55 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 resize-none"
+                ></textarea>
+              </div>
+
+              <div className="flex space-x-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAllocationModal(false)}
+                  className="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 rounded-xl uppercase tracking-wider cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/10 cursor-pointer"
+                >
+                  Assign Session
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

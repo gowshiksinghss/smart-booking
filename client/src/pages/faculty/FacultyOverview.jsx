@@ -70,7 +70,10 @@ const FacultyOverview = () => {
             </div>
 
             <div className="divide-y divide-slate-100">
-              {bookingList.slice(0, 3).map((item) => (
+              {bookingList
+                .filter(item => item.endTime && new Date(item.endTime) >= new Date())
+                .slice(0, 3)
+                .map((item) => (
                 <div key={item.id} className="py-3.5 flex items-center justify-between first:pt-0 last:pb-0">
                   <div className="flex items-center space-x-3">
                     <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 text-xs font-extrabold">
@@ -104,7 +107,9 @@ const FacultyOverview = () => {
             </h3>
             
             <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-              {bookingList.map((item) => (
+              {bookingList
+                .filter(item => item.endTime && new Date(item.endTime) >= new Date())
+                .map((item) => (
                 <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
                   <div className="flex items-start justify-between">
                     <h4 className="text-xs font-bold text-slate-900 truncate max-w-[130px]" title={item.title}>

@@ -95,31 +95,30 @@ const StudentLayout = () => {
         }));
       setBookings(studentB);
 
-      // Build attendance logs
-      const history = [];
-      for (const b of bookingsData) {
-        if (b.status === 'APPROVED') {
-          try {
-            const logs = await api.getSessionAttendance(b._id);
-            const myLog = logs.find(log => log.studentId && log.studentId.rollNumber === roll);
-            history.push({
-              id: b._id,
-              title: `${b.allocatedRoom ? b.allocatedRoom.name : 'Room'} - ${b.eventName}`,
-              date: `${new Date(b.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-              status: myLog ? myLog.attendanceStatus : 'PENDING',
-              rawBooking: b
-            });
-          } catch (e) {
-            history.push({
-              id: b._id,
-              title: `${b.allocatedRoom ? b.allocatedRoom.name : 'Room'} - ${b.eventName}`,
-              date: `${new Date(b.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-              status: 'PENDING',
-              rawBooking: b
-            });
-          }
+      // Build attendance logs in parallel and only for the student's enrolled sessions
+      const historyPromises = studentB.map(async (sb) => {
+        const b = sb.rawBooking;
+        try {
+          const logs = await api.getSessionAttendance(b._id);
+          const myLog = logs.find(log => log.studentId && (log.studentId.rollNumber === roll || log.studentId.rollNo === roll));
+          return {
+            id: b._id,
+            title: `${b.allocatedRoom ? b.allocatedRoom.name : 'Room'} - ${b.eventName}`,
+            date: `${new Date(b.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            status: myLog ? myLog.attendanceStatus : 'PENDING',
+            rawBooking: b
+          };
+        } catch (e) {
+          return {
+            id: b._id,
+            title: `${b.allocatedRoom ? b.allocatedRoom.name : 'Room'} - ${b.eventName}`,
+            date: `${new Date(b.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            status: 'PENDING',
+            rawBooking: b
+          };
         }
-      }
+      });
+      const history = await Promise.all(historyPromises);
       setAttendanceHistory(history);
     } catch (error) {
       console.error("Error refreshing student data:", error);

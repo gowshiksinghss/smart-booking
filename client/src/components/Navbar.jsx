@@ -86,6 +86,7 @@ const Navbar = ({ activeTab, setActiveTab }) => {
         return [
           { id: 'users', label: 'Users' },
           { id: 'rooms', label: 'Rooms' },
+          { id: 'broadcast', label: 'Notify' },
           { id: 'export', label: 'Analytics' },
           { id: 'settings', label: 'Settings' }
         ];

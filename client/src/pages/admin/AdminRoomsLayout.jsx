@@ -8,7 +8,8 @@ const AdminRoomsLayout = () => {
   const { 
     roomsList, 
     setRoomsList, 
-    triggerToast 
+    triggerToast,
+    refreshData
   } = useOutletContext();
 
   const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' | 'matrix'
@@ -65,6 +66,7 @@ const AdminRoomsLayout = () => {
           roomsList={roomsList} 
           setRoomsList={setRoomsList} 
           triggerToast={triggerToast} 
+          refreshData={refreshData}
         />
       )}
 
